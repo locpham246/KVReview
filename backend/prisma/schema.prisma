@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Kol {
+  id        String     @id @default(cuid())
+  name      String
+  username  String     @unique
+  platform  String     // e.g., TikTok, Instagram
+  followers Int
+  specialty String
+  avatar    String?
+  campaigns Campaign[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Restaurant {
+  id          String     @id @default(cuid())
+  name        String
+  address     String
+  cuisineType String
+  rating      Float      @default(0)
+  imageUrl    String?
+  campaigns   Campaign[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Campaign {
+  id               String     @id @default(cuid())
+  title            String
+  description      String?
+  status           String     @default("PENDING") // PENDING, ACTIVE, COMPLETED, CANCELLED
+  startDate        DateTime   @default(now())
+  budget           Float
+  engagementRate   Float?     @default(0)
+  totalEngagement  Int?       @default(0)
+  
+  kolId            String
+  kol              Kol        @relation(fields: [kolId], references: [id])
+  
+  restaurantId     String
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
+  
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
