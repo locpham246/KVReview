@@ -1,47 +1,38 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Search, Plus, ExternalLink, MessageSquare } from 'lucide-vue-next'
+import api from '../services/api'
 
 interface Kol {
   id: string
   name: string
   username: string
   platform: string
-  followers: string
+  followers: number
   specialty: string
-  avatar: string
+  avatar: string | null
 }
 
-const kols = ref<Kol[]>([
-  {
-    id: '1',
-    name: 'Foodie Mike',
-    username: '@mike_eats',
-    platform: 'TikTok',
-    followers: '1.2M',
-    specialty: 'Street Food',
-    avatar: 'https://i.pravatar.cc/150?u=mike'
-  },
-  {
-    id: '2',
-    name: 'Sarah Kitchen',
-    username: '@sarah_cooks',
-    platform: 'Instagram',
-    followers: '850K',
-    specialty: 'Fine Dining',
-    avatar: 'https://i.pravatar.cc/150?u=sarah'
-  },
-  {
-    id: '3',
-    name: 'Chef Vinh',
-    username: '@vinh_chef',
-    platform: 'Facebook',
-    followers: '500K',
-    specialty: 'Traditional Vietnamese',
-    avatar: 'https://i.pravatar.cc/150?u=vinh'
+const kols = ref<Kol[]>([])
+const loading = ref(false)
+const errorMsg = ref('')
+
+async function fetchKols() {
+  loading.value = true
+  errorMsg.value = ''
+  try {
+    const res = await api.get('/kols')
+    kols.value = res.data
+  } catch (err: any) {
+    errorMsg.value = 'Không thể tải danh sách KOL'
+  } finally {
+    loading.value = false
   }
-])
+}
+
+onMounted(fetchKols)
 </script>
+
 
 <template>
   <div class="space-y-6">
@@ -68,7 +59,27 @@ const kols = ref<Kol[]>([
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <!-- Loading state -->
+      <div v-if="loading" class="flex items-center justify-center py-16 text-slate-400">
+        <svg class="w-6 h-6 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        Đang tải...
+      </div>
+
+      <!-- Error state -->
+      <div v-else-if="errorMsg" class="flex items-center justify-center py-16 text-red-400">
+        {{ errorMsg }}
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="kols.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400">
+        <p class="text-lg font-medium">Chưa có KOL nào</p>
+        <p class="text-sm mt-1">Hãy thêm KOL đầu tiên của bạn!</p>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-left">
           <thead class="bg-slate-50 border-b text-slate-500 uppercase text-xs font-bold">
             <tr>
@@ -83,7 +94,10 @@ const kols = ref<Kol[]>([
             <tr v-for="kol in kols" :key="kol.id" class="hover:bg-slate-50 transition group">
               <td class="px-6 py-4">
                 <div class="flex items-center space-x-3">
-                  <img :src="kol.avatar" class="w-10 h-10 rounded-full border" />
+                  <img v-if="kol.avatar" :src="kol.avatar" class="w-10 h-10 rounded-full border object-cover" />
+                  <div v-else class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
+                    {{ kol.name.charAt(0).toUpperCase() }}
+                  </div>
                   <div>
                     <p class="font-bold text-slate-800">{{ kol.name }}</p>
                     <p class="text-xs text-slate-500">{{ kol.username }}</p>
